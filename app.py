@@ -144,6 +144,6 @@ if ticker:
                 news_articles = yf.Ticker(stock_name).news
                 return "\n".join([article['title'] for article in news_articles[:5]])
             except Exception:
-                return "No news found
+                return "No news found"
 
  
