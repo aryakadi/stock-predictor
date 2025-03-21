@@ -7,17 +7,20 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from yahoo_fin import news
+import google.generativeai as genai
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import plotly.graph_objects as go
 import nltk
-import openai
 
 # Streamlit UI setup
 st.set_page_config(page_title="Stock Analysis and Prediction", layout="wide")
 st.title("📈 Real-time Stock Analysis and Prediction Using LSTM & AI Insights")
 
-# Initialize OpenAI GPT API
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# Initialize Google Gemini API
+GEMINI_API_KEY = "AIzaSyCWPLsYraXaHyUhs8pt0ndCrO9_aCAcKrw"  # Replace with your Gemini API key
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel("models/gemini-1.5-pro")  # Corrected model name
 
 # Initialize VADER sentiment analyzer
 nltk.download("vader_lexicon")
@@ -126,24 +129,33 @@ if ticker:
                                  xaxis_title="Date", yaxis_title="Predicted Price (USD)")
         st.plotly_chart(fig_future)
 
-        # Sentiment Analysis with OpenAI GPT
-        def get_gpt_insights(news_text):
+        # Sentiment Analysis with Gemini AI
+        def get_gemini_insights(news_text):
             prompt = f"Summarize the following stock news and provide key takeaways:\n\n{news_text}"
             try:
-                response = openai.Completion.create(
-                    engine="text-davinci-003",
-                    prompt=prompt,
-                    max_tokens=150
-                )
-                return response.choices[0].text.strip()
+                response = gemini_model.generate_content(prompt)
+                return response.text
             except Exception as e:
-                return f"Error fetching insights from OpenAI GPT: {e}"
+                return f"Error fetching insights from Gemini AI: {e}"
 
         def fetch_stock_news(stock_name):
             try:
-                news_articles = yf.Ticker(stock_name).news
+                news_articles = news.get_yf_rss(stock_name)
                 return "\n".join([article['title'] for article in news_articles[:5]])
             except Exception:
-                return "No news found"
+                return "No news found."
 
- 
+        stock_news = fetch_stock_news(ticker)
+        st.subheader(f"📰 Latest News for {ticker}")
+        for article in news.get_yf_rss(ticker)[:5]:
+            st.write(f"📰 {article['title']}\n🔗 {article['link']}\n")
+
+        st.subheader(f"📊 Sentiment Analysis & AI Insights for {ticker}")
+        insights = get_gemini_insights(stock_news)
+        sentiment = sia.polarity_scores(stock_news)
+        risk_percentage = (1 - (sentiment["compound"] + 1) / 2) * 100
+        st.write(f"*Gemini AI Insights:*\n{insights}")
+        st.write(f"*Sentiment Scores:*")
+        st.write(f"🔹 Compound Score: {sentiment['compound']:.2f}")
+        st.write(f"🔹 Positive: {sentiment['pos']*100:.2f}% | Neutral: {sentiment['neu']*100:.2f}% | Negative: {sentiment['neg']*100:.2f}%")
+        st.write(f"⚠ *Risk Percentage:* {risk_percentage:.2f}%")
