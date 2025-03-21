@@ -4,9 +4,9 @@ numpy
 yfinance
 scikit-learn
 tensorflow
-nltk
-plotly
-openai
 yahoo_fin
 requests_html
 fake_useragent
+nltk
+plotly
+google-generativeai
