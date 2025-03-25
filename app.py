@@ -18,7 +18,7 @@ from yahoo_fin import news
 nltk.download("vader_lexicon")
 
 # Initialize Google Gemini API
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"  # Replace with your API key
+GEMINI_API_KEY = "AIzaSyCWPLsYraXaHyUhs8pt0ndCrO9_aCAcKrw"  # Replace with your API key
 genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("models/gemini-1.5-pro")
 
